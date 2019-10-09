@@ -1,3 +1,5 @@
+import macros
+
 {.passc: "-DWIN32_LEAN_AND_MEAN".}
 
 type
@@ -83,71 +85,83 @@ const
   PM_REMOVE* = 0x0001'u32
   VK_ESCAPE* = 0x1B'i32
 
-proc MessageBoxA*(hWnd:HWND, lpText: cstring, lpCaption: cstring, uType: UINT): int32 {.
-     stdcall, importc, header: "<Windows.h>".}
-proc CreateWindowExA*(
-     dwExStyle: DWORD,
-     lpClassName: cstring,
-     lpWindowName: cstring,
-     dwStyle: DWORD,
-     X: cint,
-     Y: cint,
-     nWidth: cint,
-     nHeight: cint,
-     hWndParent: HWND,
-     hMenu: HMENU,
-     hInstance: HINSTANCE,
-     lpParam: pointer
-): HWND {.
-     stdcall, importc, header: "<Windows.h>".}
+macro importAPI(header: string; stmts: untyped): untyped =
+  stmts.expectKind nnkStmtList
+  result = newStmtList()
+
+  let headerFull = "<" & header.strVal & ">"
+  for child in stmts.children:
+    if child.kind == nnkCommentStmt:
+      continue
+
+    child.expectKind nnkProcDef
+
+    var prc = copy child
+    prc.pragma = add(newNimNode(nnkPragma),
+                     ident"stdcall",
+                     ident"importc",
+                     add(newNimNode(nnkExprColonExpr),
+                         ident"header",
+                         newLit(headerFull)))
+    result.add(prc)
+
+importAPI("Windows.h"):
+  proc MessageBoxA*(hWnd:HWND, lpText: cstring, lpCaption: cstring, uType: UINT): int32
+  proc CreateWindowExA*(
+       dwExStyle: DWORD,
+       lpClassName: cstring,
+       lpWindowName: cstring,
+       dwStyle: DWORD,
+       X: cint,
+       Y: cint,
+       nWidth: cint,
+       nHeight: cint,
+       hWndParent: HWND,
+       hMenu: HMENU,
+       hInstance: HINSTANCE,
+       lpParam: pointer
+  ): HWND
+  proc GetDC*(
+       hWnd: HWND
+  ): HDC
+  proc PeekMessageA*(
+       lpMsg: ptr MSG,
+       hWnd: HWND,
+       wMsgFilterMin: UINT,
+       wMsgFilterMax: UINT,
+       wRemoveMsg:UINT
+  ): WINBOOL
+  proc ExitProcess*(
+       uExitCode: UINT
+  )
+  proc GetAsyncKeyState*(
+       vKey: cint
+  ): SHORT
+
 template CreateWindowA*(
          lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam: typed): HWND =
   CreateWindowExA(0'u32, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam)
-proc GetDC*(
-     hWnd: HWND
-): HDC {.
-     stdcall, importc, header: "<Windows.h>".}
-proc PeekMessageA*(
-     lpMsg: ptr MSG,
-     hWnd: HWND,
-     wMsgFilterMin: UINT,
-     wMsgFilterMax: UINT,
-     wRemoveMsg:UINT
-): WINBOOL {.
-     stdcall, importc, header: "<Windows.h>".}
-proc ExitProcess*(
-     uExitCode: UINT
-) {.
-     stdcall, importc, header: "<Windows.h>".}
-proc GetAsyncKeyState*(
-     vKey: cint
-): SHORT {.
-     stdcall, importc, header: "<Windows.h>".}
-proc ChoosePixelFormat*(
-     hdc: HDC,
-     ppfd: ptr PIXELFORMATDESCRIPTOR
-): cint {.
-     stdcall, importc, header: "<wingdi.h>".}
-proc SetPixelFormat*(
-     hdc: HDC,
-     format: cint,
-     ppfd: ptr PIXELFORMATDESCRIPTOR
-): WINBOOL {.
-     stdcall, importc, header: "<wingdi.h>".}
-proc SwapBuffers*(
-  Arg1: HDC
-  ): WINBOOL {.
-     stdcall, importc, header: "<wingdi.h>".}
-proc wglCreateContext*(
-     Arg1: HDC
-): HGLRC {.
-     stdcall, importc, header: "<wingdi.h>".}
-proc wglMakeCurrent*(
-     arg1: HDC,
-     arg2: HGLRC
-): WINBOOL {.
-     stdcall, importc, header: "<wingdi.h>".}
-proc wglGetProcAddress*(
-     Arg1: cstring
-): pointer {.
-     stdcall, importc, header: "<wingdi.h>".}
+
+importAPI("wingdi.h"):
+  proc ChoosePixelFormat*(
+       hdc: HDC,
+       ppfd: ptr PIXELFORMATDESCRIPTOR
+  ): cint
+  proc SetPixelFormat*(
+       hdc: HDC,
+       format: cint,
+       ppfd: ptr PIXELFORMATDESCRIPTOR
+  ): WINBOOL
+  proc SwapBuffers*(
+    Arg1: HDC
+    ): WINBOOL
+  proc wglCreateContext*(
+       Arg1: HDC
+  ): HGLRC
+  proc wglMakeCurrent*(
+       arg1: HDC,
+       arg2: HGLRC
+  ): WINBOOL
+  proc wglGetProcAddress*(
+       Arg1: cstring
+  ): pointer
