@@ -4,6 +4,7 @@ type
   UINT* = uint32
   WINBOOL* = int32
   BYTE* = uint8
+  SHORT* = cshort
   WORD* = uint16
   DWORD* = uint32
   HANDLE* = pointer
@@ -12,6 +13,8 @@ type
   HINSTANCE* = HANDLE
   HDC* = HANDLE
   HGLRC* = HANDLE
+
+  MSG* {.importc, header: "<Windows.h>".} = object
 
   PIXELFORMATDESCRIPTOR* {.final, pure.} = object
     nSize*: WORD
@@ -77,6 +80,9 @@ const
   WS_POPUP* = 0x80000000'u32
   WS_VISIBLE* = 0x10000000'u32
 
+  PM_REMOVE* = 0x0001'u32
+  VK_ESCAPE* = 0x1B'i32
+
 proc MessageBoxA*(hWnd:HWND, lpText: cstring, lpCaption: cstring, uType: UINT): int32 {.
      stdcall, importc, header: "<Windows.h>".}
 proc CreateWindowExA*(
@@ -101,9 +107,21 @@ proc GetDC*(
      hWnd: HWND
 ): HDC {.
      stdcall, importc, header: "<Windows.h>".}
+proc PeekMessageA*(
+     lpMsg: ptr MSG,
+     hWnd: HWND,
+     wMsgFilterMin: UINT,
+     wMsgFilterMax: UINT,
+     wRemoveMsg:UINT
+): WINBOOL {.
+     stdcall, importc, header: "<Windows.h>".}
 proc ExitProcess*(
      uExitCode: UINT
 ) {.
+     stdcall, importc, header: "<Windows.h>".}
+proc GetAsyncKeyState*(
+     vKey: cint
+): SHORT {.
      stdcall, importc, header: "<Windows.h>".}
 proc ChoosePixelFormat*(
      hdc: HDC,
@@ -115,6 +133,10 @@ proc SetPixelFormat*(
      format: cint,
      ppfd: ptr PIXELFORMATDESCRIPTOR
 ): WINBOOL {.
+     stdcall, importc, header: "<wingdi.h>".}
+proc SwapBuffers*(
+  Arg1: HDC
+  ): WINBOOL {.
      stdcall, importc, header: "<wingdi.h>".}
 proc wglCreateContext*(
      Arg1: HDC
