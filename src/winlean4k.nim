@@ -9,14 +9,36 @@ type
   SHORT* = cshort
   WORD* = uint16
   DWORD* = uint32
+  ULONG_PTR* {.importc, noDecl.} = csize
+  DWORD_PTR* = ULONG_PTR
   HANDLE* = pointer
   HWND* = HANDLE
   HMENU* = HANDLE
   HINSTANCE* = HANDLE
   HDC* = HANDLE
   HGLRC* = HANDLE
+  HWAVEOUT* = HANDLE
+  MMRESULT* = UINT
 
   MSG* {.importc, header: "<Windows.h>".} = object
+    message*: UINT
+  WAVEFORMATEX* {.importc, header: "<Mmreg.h>".} = object
+    wFormatTag*: WORD
+    nChannels*: WORD
+    nSamplesPerSec*: DWORD
+    nAvgBytesPerSec*: DWORD
+    nBlockAlign*: WORD
+    wBitsPerSample*: WORD
+    cbSize*: WORD
+  WAVEHDR* {.importc, header: "<Mmsystem.h>".} = object
+    lpData*: cstring
+    dwBufferLength*: DWORD
+    dwBytesRecorded*: DWORD
+    dwUser*: DWORD_PTR
+    dwFlags*: DWORD
+    dwLoops*: DWORD
+    lpNext*: ptr WAVEHDR
+    reserved*: DWORD_PTR
 
   PIXELFORMATDESCRIPTOR* {.final, pure.} = object
     nSize*: WORD
@@ -85,6 +107,16 @@ const
   PM_REMOVE* = 0x0001'u32
   VK_ESCAPE* = 0x1B'i32
 
+  WAVE_FORMAT_PCM* = 1'u16
+  WAVE_FORMAT_IEEE_FLOAT* = 0x0003'u16
+
+  WAVE_MAPPER* = UINT.high.UINT
+  CALLBACK_WINDOW* = 0x00010000'u32
+
+  MMSYSERR_NOERROR* = 0'u32
+  MAXERRORLENGTH* = 256
+  MM_WOM_DONE* = 0x3BD'u32
+
 macro importAPI(header: string; stmts: untyped): untyped =
   stmts.expectKind nnkStmtList
   result = newStmtList()
@@ -137,6 +169,32 @@ importAPI("Windows.h"):
   proc GetAsyncKeyState*(
        vKey: cint
   ): SHORT
+  proc Sleep*(
+    dwMilliseconds: DWORD
+  )
+  proc waveOutOpen*(
+       phwo: ptr HWAVEOUT,
+       uDeviceID: UINT,
+       pwfx: ptr WAVEFORMATEX,
+       dwCallback: DWORD_PTR,
+       dwInstance: DWORD_PTR,
+       fdwOpen: DWORD
+  ): MMRESULT
+  proc waveOutPrepareHeader*(
+       hwo: HWAVEOUT,
+       pwh: ptr WAVEHDR,
+       cbwh: UINT
+  ): MMRESULT
+  proc waveOutWrite*(
+       hwo: HWAVEOUT,
+       pwh: ptr WAVEHDR,
+       cbwh: UINT
+  ): MMRESULT
+  proc waveOutGetErrorTextW*(
+       mmrError: MMRESULT,
+       pszText: ptr Utf16Char,
+       cchText: UINT
+  ): MMRESULT
 
 template CreateWindowA*(
          lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam: typed): HWND =
