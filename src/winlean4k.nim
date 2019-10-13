@@ -30,7 +30,7 @@ type
     nBlockAlign*: WORD
     wBitsPerSample*: WORD
     cbSize*: WORD
-  WAVEHDR* {.importc, header: "<Mmsystem.h>".} = object
+  WAVEHDR* {.importc, header: "#include <Windows.h>\n#include <Mmsystem.h>".} = object
     lpData*: cstring
     dwBufferLength*: DWORD
     dwBytesRecorded*: DWORD
