@@ -40,6 +40,16 @@ type
     lpNext*: ptr WAVEHDR
     reserved*: DWORD_PTR
 
+  MMTIME_U* {.pure, union.} = object
+    ms*: DWORD
+    sample*: DWORD
+    cb*: DWORD
+    ticks*: DWORD
+
+  MMTIME* {.importc, header: "<Mmsystem.h>".} = object
+    wType*: UINT
+    u*: MMTIME_U
+
   PIXELFORMATDESCRIPTOR* {.final, pure.} = object
     nSize*: WORD
     nVersion*: WORD
@@ -116,6 +126,14 @@ const
   MMSYSERR_NOERROR* = 0'u32
   MAXERRORLENGTH* = 256
   MM_WOM_DONE* = 0x3BD'u32
+
+  # types for wType field in MMTIME struct
+  TIME_MS* = 0x0001'u32  # time in milliseconds
+  TIME_SAMPLES* = 0x0002'u32  # number of wave samples
+  TIME_BYTES* = 0x0004'u32  # current byte offset
+  TIME_SMPTE* = 0x0008'u32  # SMPTE time
+  TIME_MIDI* = 0x0010'u32  # MIDI time
+  TIME_TICKS* = 0x0020'u32  # Ticks within MIDI stream
 
 macro importAPI(header: string; stmts: untyped): untyped =
   stmts.expectKind nnkStmtList
@@ -194,6 +212,11 @@ importAPI("Windows.h"):
        mmrError: MMRESULT,
        pszText: ptr Utf16Char,
        cchText: UINT
+  ): MMRESULT
+  proc waveOutGetPosition*(
+       hwo: HWAVEOUT,
+       pmmt: ptr MMTIME,
+       cbmmt: UINT
   ): MMRESULT
 
 template CreateWindowA*(
