@@ -135,11 +135,11 @@ const
   TIME_MIDI* = 0x0010'u32  # MIDI time
   TIME_TICKS* = 0x0020'u32  # Ticks within MIDI stream
 
-macro importAPI(header: string; stmts: untyped): untyped =
+macro importAPI(header: static[string]; stmts: untyped): untyped =
   stmts.expectKind nnkStmtList
   result = newStmtList()
 
-  let headerFull = "<" & header.strVal & ">"
+  let headerFull = "<" & header & ">"
   for child in stmts.children:
     if child.kind == nnkCommentStmt:
       continue
@@ -243,6 +243,8 @@ importAPI("wingdi.h"):
        arg1: HDC,
        arg2: HGLRC
   ): WINBOOL
-  proc wglGetProcAddress*(
-       Arg1: cstring
-  ): pointer
+
+proc wglGetProcAddress*(
+     Arg1: cstring
+): pointer {.stdcall, importc, header: "#include <Windows.h>\\n#include <wingdi.h>".}
+
