@@ -187,6 +187,9 @@ importAPI("Windows.h"):
   proc GetAsyncKeyState*(
        vKey: cint
   ): SHORT
+  proc ShowCursor*(
+       bShow: WINBOOL
+  )
   proc Sleep*(
     dwMilliseconds: DWORD
   )
