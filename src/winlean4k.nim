@@ -22,7 +22,7 @@ type
 
   MSG* {.importc, header: "<Windows.h>".} = object
     message*: UINT
-  WAVEFORMATEX* {.importc, header: "<Mmreg.h>".} = object
+  WAVEFORMATEX* {.importc, header: "#include <Windows.h>\n#include <Mmreg.h>".} = object
     wFormatTag*: WORD
     nChannels*: WORD
     nSamplesPerSec*: DWORD
