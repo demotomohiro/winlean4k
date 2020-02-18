@@ -2,6 +2,9 @@ import macros
 
 {.passc: "-DWIN32_LEAN_AND_MEAN".}
 
+proc win(path: string): string =
+  "#include <Windows.h>\n#include <" & path & ">"
+
 type
   UINT* = uint32
   WINBOOL* = int32
@@ -22,7 +25,7 @@ type
 
   MSG* {.importc, header: "<Windows.h>".} = object
     message*: UINT
-  WAVEFORMATEX* {.importc, header: "#include <Windows.h>\n#include <Mmreg.h>".} = object
+  WAVEFORMATEX* {.importc, header: win"Mmreg.h".} = object
     wFormatTag*: WORD
     nChannels*: WORD
     nSamplesPerSec*: DWORD
@@ -30,7 +33,7 @@ type
     nBlockAlign*: WORD
     wBitsPerSample*: WORD
     cbSize*: WORD
-  WAVEHDR* {.importc, header: "#include <Windows.h>\n#include <Mmsystem.h>".} = object
+  WAVEHDR* {.importc, header: win"Mmsystem.h".} = object
     lpData*: cstring
     dwBufferLength*: DWORD
     dwBytesRecorded*: DWORD
@@ -46,7 +49,7 @@ type
     cb*: DWORD
     ticks*: DWORD
 
-  MMTIME* {.importc, header: "<Mmsystem.h>".} = object
+  MMTIME* {.importc, header: win"Mmsystem.h".} = object
     wType*: UINT
     u*: MMTIME_U
 
@@ -139,7 +142,11 @@ macro importAPI(header: static[string]; stmts: untyped): untyped =
   stmts.expectKind nnkStmtList
   result = newStmtList()
 
-  let headerFull = "<" & header & ">"
+  let headerFull =
+    if header == "Windows.h":
+      "<Windows.h>"
+    else:
+      win(header)
   for child in stmts.children:
     if child.kind == nnkCommentStmt:
       continue
@@ -246,8 +253,6 @@ importAPI("wingdi.h"):
        arg1: HDC,
        arg2: HGLRC
   ): WINBOOL
-
-proc wglGetProcAddress*(
-     Arg1: cstring
-): pointer {.stdcall, importc, header: "#include <Windows.h>\\n#include <wingdi.h>".}
-
+  proc wglGetProcAddress*(
+       Arg1: cstring
+  ): pointer
